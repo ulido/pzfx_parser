@@ -1,0 +1,11 @@
+[build-system]
+requires = ["flit"]
+build-backend = "flit.buildapi"
+
+[tool.flit.metadata]
+module = "pzfx_parser"
+author = "Ulrich Dobramysl"
+author-email = "ulrich.dobramysl@gmail.com"
+home-page = "https://github.com/ulido/pzfx_parser"
+classifiers = ["License :: OSI Approved :: MIT License"]
+
