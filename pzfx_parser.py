@@ -23,7 +23,10 @@ def _subcolumn_to_numpy(subcolumn):
 
 def _parse_xy_table(table):
     xformat = table.attrib['XFormat']
-    yformat = table.attrib['YFormat']
+    try:
+        yformat = table.attrib['YFormat']
+    except KeyError:
+        yformat = None
     evformat = table.attrib['EVFormat']
 
     xscounter = count()
@@ -62,7 +65,7 @@ def _parse_table_to_dataframe(table):
     
     tabletype = table.attrib['TableType']
     
-    if tabletype == 'XY' or tabletype == 'TwoWay':
+    if tabletype == 'XY' or tabletype == 'TwoWay' or tabletype == 'OneWay':
         df = _parse_xy_table(table)
     else:
         raise PrismFileLoadError('Cannot parse %s tables for now!' % tabletype)
