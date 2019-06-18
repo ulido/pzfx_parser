@@ -18,7 +18,8 @@ def _get_all_text(element):
     return s
 
 def _subcolumn_to_numpy(subcolumn):
-    data = [float(_get_all_text(d)) for d in subcolumn.findall('d')]
+    data = [float(_get_all_text(d)) if not (('Excluded' in d.attrib) and (d.attrib['Excluded'] == '1')) else np.nan
+            for d in subcolumn.findall('d')]
     return np.array(data)
 
 def _parse_xy_table(table):
