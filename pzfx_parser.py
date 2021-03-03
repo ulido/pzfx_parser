@@ -99,7 +99,14 @@ def read_pzfx(filename):
     
     return tables
 
-def convert_pzfx_to_excel(filename,output):
+def convert_pzfx_to_excel(tables, output_filename):
+    """Takes a `tables` dict (from `read_pzfx`) and writes to an xlsx file, returns nothing."""
+    with pd.ExcelWriter(output_filename, engine='openpyxl') as writer:
+        for df_name, df in tables.items():
+            for c in '\/*[]:?':
+                df_name = df_name.replace(c, '')
+            df.to_excel(writer, sheet_name=df_name)
+    return
     """Opens a Prism pzfx file, then writes to an xlsx file, returns nothing"""
     tables = read_pzfx(filename)
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
