@@ -20,10 +20,10 @@ def _get_all_text(element):
     return s
 
 
-def _subcolumn_to_numpy(subcolumn):
+def _subcolumn_to_numpy(subcolumn, ns):
     try:
         data = []
-        for d in subcolumn.findall('d'):
+        for d in subcolumn.findall('d', ns):
             if not (('Excluded' in d.attrib) and (d.attrib['Excluded'] == '1')):
                 if _get_all_text(d) == '':
                     data.append(None)
@@ -38,7 +38,7 @@ def _subcolumn_to_numpy(subcolumn):
     return np.array(data)
 
 
-def _parse_xy_table(table):
+def _parse_xy_table(table, ns):
     xformat = table.attrib['XFormat']
     try:
         yformat = table.attrib['YFormat']
@@ -59,16 +59,16 @@ def _parse_xy_table(table):
         ysubcolumn_names = lambda: str(next(yscounter))
 
     columns = {}
-    for xcolumn in chain(table.findall('XColumn'), table.findall('XAdvancedColumn')):
-        xcolumn_name = _get_all_text(xcolumn.find('Title'))
-        for subcolumn in xcolumn.findall('Subcolumn'):
+    for xcolumn in chain(table.findall('XColumn', ns), table.findall('XAdvancedColumn', ns)):
+        xcolumn_name = _get_all_text(xcolumn.find('Title', ns))
+        for subcolumn in xcolumn.findall('Subcolumn', ns):
             subcolumn_name = xcolumn_name + '_' + xsubcolumn_names()
-            columns[subcolumn_name] = _subcolumn_to_numpy(subcolumn)
-    for ycolumn in chain(table.findall('YColumn'), table.findall('YAdvancedColumn')):
-        ycolumn_name = _get_all_text(ycolumn.find('Title'))
-        for subcolumn in ycolumn.findall('Subcolumn'):
+            columns[subcolumn_name] = _subcolumn_to_numpy(subcolumn, ns)
+    for ycolumn in chain(table.findall('YColumn', ns), table.findall('YAdvancedColumn', ns)):
+        ycolumn_name = _get_all_text(ycolumn.find('Title', ns))
+        for subcolumn in ycolumn.findall('Subcolumn', ns):
             subcolumn_name = ycolumn_name + '_' + ysubcolumn_names()
-            columns[subcolumn_name] = _subcolumn_to_numpy(subcolumn)
+            columns[subcolumn_name] = _subcolumn_to_numpy(subcolumn, ns)
 
     maxlength = max([v.shape[0] if v.shape != () else 0 for v in columns.values()])
     for k, v in columns.items():
@@ -81,12 +81,12 @@ def _parse_xy_table(table):
     return pd.DataFrame(columns)
 
 
-def _parse_table_to_dataframe(table):
+def _parse_table_to_dataframe(table, ns):
     # table_id = table.attrib['ID']
     tabletype = table.attrib['TableType']
 
     if tabletype == 'XY' or tabletype == 'TwoWay' or tabletype == 'OneWay':
-        df = _parse_xy_table(table)
+        df = _parse_xy_table(table, ns)
     else:
         raise PrismFileLoadError('Cannot parse %s tables for now!' % tabletype)
 
@@ -98,13 +98,17 @@ def read_pzfx(filename):
     Returns a dictionary containing table names as keys and pandas DataFrames as values."""
     tree = ET.parse(filename)
     root = tree.getroot()
-    if root.tag != 'GraphPadPrismFile':
+    if root.tag == 'GraphPadPrismFile':
+        ns = None
+    elif root.tag == '{http://graphpad.com/prism/Prism.htm}GraphPadPrismFile':
+        ns = {'': 'http://graphpad.com/prism/Prism.htm'}
+    else:
         raise PrismFileLoadError('Not a Prism file!')
     if root.attrib['PrismXMLVersion'] != '5.00':
         raise PrismFileLoadError('Can only load Prism files with XML version 5.00!')
 
-    tables = {_get_all_text(table.find('Title')): _parse_table_to_dataframe(table)
-              for table in root.findall('Table')}
+    tables = {_get_all_text(table.find('Title', ns)): _parse_table_to_dataframe(table, ns)
+              for table in root.findall('Table', ns)}
 
     return tables
 
