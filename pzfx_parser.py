@@ -58,6 +58,14 @@ def _parse_xy_table(table, ns):
         yscounter = count()
         ysubcolumn_names = lambda: str(next(yscounter))
 
+    index = None
+    for row_titles in table.findall('RowTitlesColumn', ns):
+        for subcolumn in row_titles.findall('Subcolumn', ns):
+            titles = []
+            for d in subcolumn.findall('d', ns):
+                titles.append(_get_all_text(d))
+            index = pd.Index(titles)
+
     columns = {}
     for xcolumn in chain(table.findall('XColumn', ns), table.findall('XAdvancedColumn', ns)):
         xcolumn_name = _get_all_text(xcolumn.find('Title', ns))
@@ -78,7 +86,7 @@ def _parse_xy_table(table, ns):
         else:
             columns[k] = np.pad(v, (0, maxlength - 0), mode='constant', constant_values=np.nan)
 
-    return pd.DataFrame(columns)
+    return pd.DataFrame(columns, index=index)
 
 
 def _parse_table_to_dataframe(table, ns):
