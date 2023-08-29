@@ -5,7 +5,7 @@ import pandas as pd
 from itertools import count, chain, cycle
 import numpy as np
 
-__version__ = '0.3.1'
+__version__ = '0.4'
 
 
 class PrismFileLoadError(Exception):
